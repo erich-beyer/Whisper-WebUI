@@ -6,6 +6,7 @@ import os
 from pyannote.audio import Pipeline
 from typing import Optional, Union
 import torch
+import functools
 
 from modules.whisper.data_classes import *
 from modules.utils.paths import DIARIZATION_MODELS_DIR
@@ -22,11 +23,19 @@ class DiarizationPipeline:
     ):
         if isinstance(device, str):
             device = torch.device(device)
-        self.model = Pipeline.from_pretrained(
-            model_name,
-            use_auth_token=use_auth_token,
-            cache_dir=cache_dir
-        ).to(device)
+        # PyTorch 2.6+ defaults weights_only=True but pyannote checkpoints
+        # embed several custom globals (TorchVersion, Specifications, etc.).
+        # Temporarily restore weights_only=False scoped to this trusted load.
+        _original_load = torch.load
+        torch.load = functools.partial(_original_load, weights_only=False)
+        try:
+            self.model = Pipeline.from_pretrained(
+                model_name,
+                use_auth_token=use_auth_token,
+                cache_dir=cache_dir
+            ).to(device)
+        finally:
+            torch.load = _original_load
 
     def __call__(self, audio: Union[str, np.ndarray], min_speakers=None, max_speakers=None):
         if isinstance(audio, str):
