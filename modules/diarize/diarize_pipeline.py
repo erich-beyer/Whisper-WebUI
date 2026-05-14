@@ -35,8 +35,8 @@ class DiarizationPipeline:
             'waveform': torch.from_numpy(audio[None, :]),
             'sample_rate': SAMPLE_RATE
         }
-        segments = self.model(audio_data, min_speakers=min_speakers, max_speakers=max_speakers)
-        diarize_df = pd.DataFrame(segments.itertracks(yield_label=True), columns=['segment', 'label', 'speaker'])
+        output = self.model(audio_data, min_speakers=min_speakers, max_speakers=max_speakers)
+        diarize_df = pd.DataFrame(output.speaker_diarization.itertracks(yield_label=True), columns=['segment', 'label', 'speaker'])
         diarize_df['start'] = diarize_df['segment'].apply(lambda x: x.start)
         diarize_df['end'] = diarize_df['segment'].apply(lambda x: x.end)
         return diarize_df
