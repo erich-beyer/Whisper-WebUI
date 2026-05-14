@@ -7,7 +7,9 @@ RUN apt-get update && \
 
 WORKDIR /Whisper-WebUI
 
-COPY requirements.txt .
+COPY requirements.txt constraints.txt ./
+
+ENV PIP_CONSTRAINT=/Whisper-WebUI/constraints.txt
 
 RUN python3 -m venv venv && \
     . venv/bin/activate && \
